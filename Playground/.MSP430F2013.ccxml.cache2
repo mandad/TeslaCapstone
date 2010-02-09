@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<configurations>
+
+  <configuration id="configuration_0">
+    <connection desc="TI MSP430 USB1" id="TI MSP430 USB1" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\connections\TIMSP430-USB.xml">
+      <connectionType Type="MSP430" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\connections\TIMSP430-USB.xml"/>
+      <property Type="hiddenfield" Value="101" id="portAddr1" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\connections\TIMSP430-USB.xml"/>
+      <property Type="hiddenfield" Value="No" id="dataFileRequired" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\connections\TIMSP430-USB.xml"/>
+      <drivers id="drivers" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\drivers\msp430_emu.xml">
+        <isa ProcID="0x6b800000" Type="MSP430" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\drivers\msp430_emu.xml">
+          <driver file="C:\Program Files\Texas Instruments\ccsv4\DebugServer\drivers\msp430_emu.dvr">
+            <connectionType Type="MSP430"/>
+          </driver>
+        </isa>
+      </drivers>
+      <platform id="platform_0">
+        <device desc="MSP430F2013" description="MSP430F2013" id="MSP430F2013" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml" partnum="MSP430F20x3">
+          <property Type="numericfield" Value="0" id="HeapDefaultSize" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="stringfield" Value="minimal" id="PrintfDefault_support" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="numericfield" Value="50" id="StackDefaultSize" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="numericfield" Value="2" id="breakpoints" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="stringfield" Value="STANDARD" id="clockcontrol" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="stringfield" Value="MSP430" id="cpu_family" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="stringfield" Value="EMEX_LOW" id="eem" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="numericfield" Value="0" id="hw_mpy" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="numericfield" Value="3.3" id="target_vcc_default" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="numericfield" Value="1" id="jtag" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="numericfield" Value="1" id="spybiwire" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="numericfield" Value="0" id="cycleCounter" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <property Type="stringfield" Value="0xFFE0" id="iv_base" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\devices\MSP430F2013.xml"/>
+          <cpu desc="MSP430" description="MSP430 CPU" id="MSP430" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" isa="MSP430">
+            <address_space id="program" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml"/>
+            <address_space id="data" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml"/>
+            <register acronym="PC" description="" id="PC" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="SP" description="" id="SP" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="SR" description="" id="SR" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16">
+              <bitfield begin="0" description="Carry bit. This bit is set when the result of a byte or word operation produced a carry and cleared when no carry occurred." end="0" id="C" range="" resetval="0" rwaccess="RW" width="1"/>
+              <bitfield begin="1" description="Zero bit. This bit is set when the result of a byte or word operation is 0 and cleared when the result is not 0." end="1" id="Z" range="" resetval="0" rwaccess="RW" width="1"/>
+              <bitfield begin="2" description="Negative bit. This bit is set when the result of a byte or word operation is negative and cleared when the result is not negative." end="2" id="N" range="" resetval="0" rwaccess="RW" width="1"/>
+              <bitfield begin="3" description="General interrupt enable. This bit, when set, enables maskable interrupts. When reset, all maskable interrupts are disabled." end="3" id="GIE" range="" resetval="0" rwaccess="RW" width="1"/>
+              <bitfield begin="4" description="CPU off. This bit, when set, turns off the CPU." end="4" id="CPUOFF" range="" resetval="0" rwaccess="RW" width="1"/>
+              <bitfield begin="5" description="Oscillator Off. This bit, when set, turns off the LFXT1 crystal oscillator, when LFXT1CLK is not use for MCLK or SMCLK" end="5" id="OSCOFF" range="" resetval="0" rwaccess="RW" width="1"/>
+              <bitfield begin="6" description="System clock generator 0. This bit, when set, turns off the FLL+ loop control" end="6" id="SCG0" range="" resetval="0" rwaccess="RW" width="1"/>
+              <bitfield begin="7" description="System clock generator 1. This bit, when set, turns off the DCO dc generator, if DCOCLK is not used for MCLK or SMCLK." end="7" id="SCG1" range="" resetval="0" rwaccess="RW" width="1"/>
+              <bitfield begin="8" description="Overflow bit. This bit is set when the result of an arithmetic operation overflows the signed-variable range." end="8" id="V" range="" resetval="0" rwaccess="RW" width="1"/>
+            </register>
+            <register acronym="R3" description="" id="R3" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R4" description="" id="R4" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R5" description="" id="R5" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R6" description="" id="R6" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R7" description="" id="R7" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R8" description="" id="R8" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R9" description="" id="R9" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R10" description="" id="R10" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R11" description="" id="R11" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R12" description="" id="R12" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R13" description="" id="R13" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R14" description="" id="R14" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <register acronym="R15" description="" id="R15" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\cpus\MSP430.xml" width="16"/>
+            <module accessnumbytes="2" baseaddr="0x0000" description="" id="Special_Function" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\Special_Function_10.xml" permissions="p" requestor="MSP430" size="10"/>
+            <module accessnumbytes="2" baseaddr="0x0000" description="" id="System_Clock" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\System_Clock_3.xml" permissions="p" requestor="MSP430" size="10"/>
+            <module accessnumbytes="2" baseaddr="0x0000" description="" id="Flash" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\Flash_3.xml" permissions="p" requestor="MSP430" size="10"/>
+            <module accessnumbytes="2" baseaddr="0x0000" description="" id="Port_1_2" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\Port_1_2_2.xml" permissions="p" requestor="MSP430" size="10"/>
+            <module accessnumbytes="2" baseaddr="0x0000" description="" id="SD16_A1" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\SD16_A1_1.xml" permissions="p" requestor="MSP430" size="10"/>
+            <module accessnumbytes="2" baseaddr="0x0000" description="" id="Timer_A2" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\Timer_A2_1.xml" permissions="p" requestor="MSP430" size="10"/>
+            <module accessnumbytes="2" baseaddr="0x0000" description="" id="USI" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\USI_1.xml" permissions="p" requestor="MSP430" size="10"/>
+            <module accessnumbytes="2" baseaddr="0x0000" description="" id="Watchdog_Timer" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\Watchdog_Timer_1.xml" permissions="p" requestor="MSP430" size="10"/>
+            <module accessnumbytes="2" baseaddr="0x0000" description="" id="Calibration_Data" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\Calibration_Data_1.xml" permissions="p" requestor="MSP430" size="10"/>
+            <module accessnumbytes="4" baseaddr="0x0000" description="" hidden="true" instanceFile="C:\Program Files\Texas Instruments\ccsv4\common\targetdb\modules\MSP430_NotVisible.xml" permissions="p" requestor="MSP430" size="00"/>
+          </cpu>
+        </device>
+      </platform>
+    </connection>
+  </configuration>
+
+</configurations>
