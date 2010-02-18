@@ -1,0 +1,8 @@
+Debug/
+.ccsproject
+.cdtbuild
+.cdtproject
+.project
+.settings/
+MSP430F2616.ccxml
+lnk_msp430f2616.cmd
