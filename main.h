@@ -1,5 +1,6 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 void sleep();
-int main();
+void main();
+void xmit(unsigned char toSend);
 #endif /*MAIN_H_*/
