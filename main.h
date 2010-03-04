@@ -3,4 +3,5 @@
 void sleep();
 void main();
 void xmit(unsigned char toSend);
+char board;
 #endif /*MAIN_H_*/
