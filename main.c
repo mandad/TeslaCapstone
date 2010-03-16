@@ -65,20 +65,26 @@ void c_int00()	//system reset
 	
 	//A2D
 	//trap if both are 0/1
-	while(((P5IN & BIT7==0)&&(P6IN&BIT6==0))||(P5IN & BIT7>0)&&(P6IN&BIT6>0)); 
 	
-	if(P5IN&BIT7>0) //ACCEL
+	//while(((P5IN & BIT7==0)&&(P6IN&BIT6==0))||(P5IN & BIT7>0)&&(P6IN&BIT6>0)); 
+	
+	/*if(P5IN&BIT7>0) //ACCEL
 	{
 		P6SEL=BIT0|BIT1|BIT2;
 		P6REN|=BIT3;
 		board=0;
 	}
 	else		//TEMP
-	{
+	{*/
 		P6SEL=BIT3;
 		P6REN|=BIT0|BIT1|BIT2;
 		board=1;
-	}
+	//}
+	ADC12CTL0 = SHT0_2 + ADC12ON;             // Set sampling time, turn on ADC12
+  ADC12CTL1 = SHP;                          // Use sampling timer
+  ADC12IE = 0x01;                           // Enable interrupt
+  
+  ADC12CTL0 |= ENC;                         // Conversion enabled
 	
 	//UART brs1 brf0
 	UCA0CTL1 |= UCSSEL_2;                    			// SMCLK
@@ -101,13 +107,16 @@ void main()
   	while(1)
   	{
  	 	sleep();
-  		if(!(SVSCTL&&SVSFG))
+  		if(!(SVSCTL&&SVSFG))				//power still good?
   		{
   			//collect data
+  			ADC12CTL0 |= ADC12SC;                   // Start convn, software controlled
+  			 _BIS_SR(CPUOFF + GIE);                  // LPM0, ADC12_ISR will force exit
+  			
   			//xmit
-			xmit(112);
+	//		xmit(112);
   		}
-  		SVSCTL&=!SVSFG;
+  		SVSCTL&=!SVSFG;						//Reset svs flag
   	} 
 }
 
@@ -117,6 +126,15 @@ __interrupt void watchdog_timer (void)
 	LPM3_EXIT;
 	WDTCTL = WDTPW+WDTHOLD;
 	//Turn on external
+}
+#pragma vector=ADC12_VECTOR
+__interrupt void ADC12_ISR (void)
+{
+    if (ADC12MEM0 < 0x7FF)
+      P1OUT &= ~0x01;                       // Clear P1.0 LED off
+    else
+      P1OUT |= 0x01;                        // Set P1.0 LED on
+    _BIC_SR_IRQ(CPUOFF);                    // Clear CPUOFF bit from 0(SR)
 }
 
 void xmit(unsigned char toSend)			//Change to interrupt
