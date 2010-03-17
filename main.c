@@ -38,8 +38,9 @@ void c_int00()	//system reset
 	
 	//Config unused ports like P1
 	P1SEL=0;											//set to I/O
-	P1DIR=0;											// set input
+	P1DIR=BIT1|BIT2;											// set input cept 1 2
 	P1REN=0xFF;											//Activate pull resistors
+	P1OUT=0;
 	
 	P2SEL=0;
 	P2DIR=0;
@@ -80,11 +81,12 @@ void c_int00()	//system reset
 		P6REN|=BIT0|BIT1|BIT2;
 		board=1;
 	//}
+	
 	ADC12CTL0 = SHT0_2 + ADC12ON;             // Set sampling time, turn on ADC12
   ADC12CTL1 = SHP;                          // Use sampling timer
   ADC12IE = 0x01;                           // Enable interrupt
   
-  ADC12CTL0 |= ENC;                         // Conversion enabled
+  ADC12CTL0 |= ENC + ADC12SC;                         // Conversion enabled
 	
 	//UART brs1 brf0
 	UCA0CTL1 |= UCSSEL_2;                    			// SMCLK
@@ -98,6 +100,7 @@ void c_int00()	//system reset
 
 void main()
 {
+	c_int00();
 	//test UART
 	WDTCTL = WDT_ADLY_1000;                   // WDT 1s*4 interval timer, ACLK
   	BCSCTL1 |= DIVA_1;                        // ACLK/2
@@ -106,17 +109,18 @@ void main()
 	__bis_SR_register(LPM3_bits + GIE);     // Enter LPM3, enable interrupts
   	while(1)
   	{
- 	 	sleep();
+ 	 	SVSCTL&=!SVSFG;						//Reset svs flag
   		if(!(SVSCTL&&SVSFG))				//power still good?
   		{
+  		//	P1OUT = BIT2;
   			//collect data
   			ADC12CTL0 |= ADC12SC;                   // Start convn, software controlled
   			 _BIS_SR(CPUOFF + GIE);                  // LPM0, ADC12_ISR will force exit
   			
   			//xmit
-	//		xmit(112);
+			//		xmit(112);
   		}
-  		SVSCTL&=!SVSFG;						//Reset svs flag
+  	sleep();	
   	} 
 }
 
@@ -131,9 +135,9 @@ __interrupt void watchdog_timer (void)
 __interrupt void ADC12_ISR (void)
 {
     if (ADC12MEM0 < 0x7FF)
-      P1OUT &= ~0x01;                       // Clear P1.0 LED off
+      P1OUT &= ~BIT1;                       // Clear P1.0 LED off
     else
-      P1OUT |= 0x01;                        // Set P1.0 LED on
+      P1OUT = BIT1;                        // Set P1.0 LED on
     _BIC_SR_IRQ(CPUOFF);                    // Clear CPUOFF bit from 0(SR)
 }
 
