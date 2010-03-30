@@ -2,6 +2,6 @@
 #define MAIN_H_
 void sleep();
 void main();
-void xmit(unsigned char toSend);
+void xmit(unsigned int toSend);
 char board;
 #endif /*MAIN_H_*/

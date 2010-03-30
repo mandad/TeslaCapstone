@@ -25,17 +25,23 @@
  * P5 -7
  * P6.4,5,7
  * **************************/
+ volatile unsigned int data;
+ unsigned int lastData;
 void c_int00()	//system reset
 {
+	int i;
 	WDTCTL=WDTPW|WDTHOLD;								//stop the watchdog
-	BCSCTL3 |= LFXT1S_2;								//Set ACLK to VLO
+	
 	if (CALBC1_1MHZ ==0xFF || CALDCO_1MHZ == 0xFF)      //set to 1MHZ                         
   	{  
    		 while(1);                               		// If calibration constants erased
   	}                                        			// do not load, trap CPU!!   
   	BCSCTL1 = CALBC1_1MHZ;                   			// Set DCO
   	DCOCTL = CALDCO_1MHZ; 
-	
+  	
+	BCSCTL1 |= DIVA_1;                        			// ACLK/2
+	BCSCTL3 |= LFXT1S_2;								//Set ACLK to VLO
+	IE1 |= WDTIE;                             			// Enable WDT interrupt
 	//Config unused ports like P1
 	P1SEL=0;											//set to I/O
 	P1DIR=BIT1|BIT2;											// set input cept 1 2
@@ -54,7 +60,8 @@ void c_int00()	//system reset
 	P4DIR=!(BIT3|BIT6|BIT7);
 	P4REN=BIT3|BIT6|BIT7;						//turnon unused pull R	
 	
-	P4OUT=BIT1|BIT4;							//ID on ANT off
+	//P4OUT=BIT1|BIT4;							//ID on ANT off
+	P4OUT=BIT5;
 	
 	P5SEL=0;
 	P5DIR=0;
@@ -64,9 +71,8 @@ void c_int00()	//system reset
 	P6DIR=0;
 	P6REN=BIT4|BIT5|BIT7;
 	
-	//A2D
+	//BOARD SELECT
 	//trap if both are 0/1
-	
 	//while(((P5IN & BIT7==0)&&(P6IN&BIT6==0))||(P5IN & BIT7>0)&&(P6IN&BIT6>0)); 
 	
 	/*if(P5IN&BIT7>0) //ACCEL
@@ -76,51 +82,61 @@ void c_int00()	//system reset
 		board=0;
 	}
 	else		//TEMP
-	{*/
+	{
 		P6SEL=BIT3;
 		P6REN|=BIT0|BIT1|BIT2;
 		board=1;
-	//}
+	}
 	
-	ADC12CTL0 = SHT0_2 + ADC12ON;             // Set sampling time, turn on ADC12
-  ADC12CTL1 = SHP;                          // Use sampling timer
-  ADC12IE = 0x01;                           // Enable interrupt
-  
-  ADC12CTL0 |= ENC + ADC12SC;                         // Conversion enabled
 	
-	//UART brs1 brf0
+
+    */
+    
+    //UART brs1 brf0
 	UCA0CTL1 |= UCSSEL_2;                    			// SMCLK
     UCA0BR0 = 104;                            			// 1MHz 9600
     UCA0BR1 = 0;                              			// 1MHz 9600
     UCA0MCTL = UCBRS0;              		 			// Modulation UCBRSx = 1
     UCA0CTL1 &= ~UCSWRST;                     			// **Initialize USCI state machine**
+	
+	//A2D
+	P6SEL=BIT3;
+	P6REN|=BIT0|BIT1|BIT2;
+ 	
+ 	ADC12CTL0 = ADC12ON+SHT0_2+REFON+REF2_5V; // Turn on and set up ADC12  
+ 												//for more power turn off ref when not in use
+	ADC12CTL1 = SHP;                          // Use sampling timer
+	ADC12MCTL0 = SREF_1;                      // Vr+=Vref+
+	ADC12IE = 0x01;                           // Enable interrupt
+	
+	for ( i=0; i<0x3600; i++);                // Delay for reference start-up
+	lastData=0;
+	data=0;
 }
 
-//TODO getData()  set up A/D, sleep, run A/D,sleep?,process data,xmit
 
 void main()
 {
 	c_int00();
-	//test UART
-	WDTCTL = WDT_ADLY_1000;                   // WDT 1s*4 interval timer, ACLK
-  	BCSCTL1 |= DIVA_1;                        // ACLK/2
-	IE1 |= WDTIE;                             // Enable WDT interrupt
+	_bis_SR_register(GIE);						//enable interrupts 
 	SVSCTL = 0xB0;                   		 // SVS  @ 3.2V
-	__bis_SR_register(LPM3_bits + GIE);     // Enter LPM3, enable interrupts
+	ADC12CTL0 |= ENC;                         // Enable conversions
+	
   	while(1)
   	{
- 	 	SVSCTL&=!SVSFG;						//Reset svs flag
-  		if(!(SVSCTL&&SVSFG))				//power still good?
+ 	 	SVSCTL&=~SVSFG;						//Reset svs flag
+  		if((SVSCTL&SVSFG))				//power bad
   		{
-  		//	P1OUT = BIT2;
-  			//collect data
-  			ADC12CTL0 |= ADC12SC;                   // Start convn, software controlled
-  			 _BIS_SR(CPUOFF + GIE);                  // LPM0, ADC12_ISR will force exit
-  			
-  			//xmit
-			//		xmit(112);
+  			sleep();	
   		}
-  	sleep();	
+  		else
+  		{
+    		ADC12CTL0 |= ADC12SC;                   // Start conversion
+    		LPM0;
+    		//TODO:Data Processing
+    		xmit(data);
+    		sleep();
+  		}
   	} 
 }
 
@@ -129,19 +145,18 @@ __interrupt void watchdog_timer (void)
 {
 	LPM3_EXIT;
 	WDTCTL = WDTPW+WDTHOLD;
-	//Turn on external
 }
+
+
 #pragma vector=ADC12_VECTOR
 __interrupt void ADC12_ISR (void)
 {
-    if (ADC12MEM0 < 0x7FF)
-      P1OUT &= ~BIT1;                       // Clear P1.0 LED off
-    else
-      P1OUT = BIT1;                        // Set P1.0 LED on
-    _BIC_SR_IRQ(CPUOFF);                    // Clear CPUOFF bit from 0(SR)
+	LPM0_EXIT;
+    data=ADC12MEM0;
 }
 
-void xmit(unsigned char toSend)			//Change to interrupt
+
+void xmit(unsigned int toSend)			//Change to interrupt
 {
 	while(P2IN&BIT0==1);		//Busy wait for clear to send
 	while(!(IFG2&UCA0TXIFG));	//Busy wait for buffer good
@@ -151,7 +166,6 @@ void xmit(unsigned char toSend)			//Change to interrupt
 
 void sleep()
 {
-	//Turn off external
 	WDTCTL = WDT_ADLY_1000;                   // WDT 1s*4 interval timer, ACLK
 	LPM3;
 }
