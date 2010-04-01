@@ -1,33 +1,25 @@
 #include <msp430f2616.h>
 #include "main.h"
 /*****************************
- * INPUT PINS:   Port        Pin
+ * INPUT PINS:   Port        Pin		CURRENT
  * Accel:		P6.0,1,2   59,60,61
- * Accel ID		P5.7		51
- * Temp(TMP):	P6.3		2
- * Temp ID		P6.6		5
- * UARTTX:		P3.5		33
- * RTS:			P2.0 		20
+ * Temp(TMP):	P6.3		2			x
+ * UARTTX:		P3.5		33			x
+ * RTS:			P2.0 		20			x
  * 
  * OUTPUT PINS:
- * UARTRX		P3.4		32
+ * Baud			P1.0-1.2 	12-14		x
+ * UARTRX		P3.4		32			x
  * Accel PDown	P4.0		36
- * Sensor ID	P4.1		37
- * Temp PDown	P4.2		38
- * ANTSleep		P4.4		40
- * !ANTsuspend	P4.5		41
+ * !Temp PDown	P4.2		38			x
+ * ANTSleep		P4.4		40 			x
+ * !ANTsuspend	P4.5		41			x
  * 
- * UNUSED:
- * P1
- * P2 -0
- * P3 -4,5
- * P4.3,6,7
- * P5 -7
- * P6.4,5,7
  * **************************/
- volatile unsigned int data;
- unsigned int lastData;
-void c_int00()	//system reset
+volatile unsigned int data;
+unsigned int lastData;
+#pragma vector=RESET_VECTOR
+__interrupt void c_int00()	//system reset
 {
 	int i;
 	WDTCTL=WDTPW|WDTHOLD;								//stop the watchdog
@@ -44,53 +36,30 @@ void c_int00()	//system reset
 	IE1 |= WDTIE;                             			// Enable WDT interrupt
 	//Config unused ports like P1
 	P1SEL=0;											//set to I/O
-	P1DIR=BIT1|BIT2;											// set input cept 1 2
-	P1REN=0xFF;											//Activate pull resistors
-	P1OUT=0;
+	P1DIR=BIT0|BIT1|BIT2;								// set input cept baud output
+	P1REN=~(BIT0|BIT1|BIT2);							//Activate pull resistors
+	P1OUT=BIT0|BIT3;									//9600 baud
 	
 	P2SEL=0;
 	P2DIR=0;
-	P2REN=!BIT0;										//Pin 0 RTS INPUT
+	P2REN=~BIT0;										//Pin 0 RTS INPUT
 	
 	P3SEL=BIT4|BIT5;									//UART A0
 	P3DIR=0;								
-	P3REN=!(BIT4|BIT5);									//unused pins
+	P3REN=~(BIT4|BIT5);									//unused pins
 
 	P4SEL=0;
-	P4DIR=!(BIT3|BIT6|BIT7);
-	P4REN=BIT3|BIT6|BIT7;						//turnon unused pull R	
-	
-	//P4OUT=BIT1|BIT4;							//ID on ANT off
-	P4OUT=BIT5;
+	P4DIR=BIT2|BIT4|BIT5;
+	P4REN=~(BIT2|BIT4|BIT5);						//turnon unused pull R	
+	P4OUT=BIT2|BIT4|BIT5;
 	
 	P5SEL=0;
 	P5DIR=0;
-	P5REN=!BIT7;
+	P5REN=0xFF;
 	
-	P6SEL=0;
+	P6SEL=BIT3;
 	P6DIR=0;
-	P6REN=BIT4|BIT5|BIT7;
-	
-	//BOARD SELECT
-	//trap if both are 0/1
-	//while(((P5IN & BIT7==0)&&(P6IN&BIT6==0))||(P5IN & BIT7>0)&&(P6IN&BIT6>0)); 
-	
-	/*if(P5IN&BIT7>0) //ACCEL
-	{
-		P6SEL=BIT0|BIT1|BIT2;
-		P6REN|=BIT3;
-		board=0;
-	}
-	else		//TEMP
-	{
-		P6SEL=BIT3;
-		P6REN|=BIT0|BIT1|BIT2;
-		board=1;
-	}
-	
-	
-
-    */
+	P6REN=~BIT3;
     
     //UART brs1 brf0
 	UCA0CTL1 |= UCSSEL_2;                    			// SMCLK
@@ -99,9 +68,7 @@ void c_int00()	//system reset
     UCA0MCTL = UCBRS0;              		 			// Modulation UCBRSx = 1
     UCA0CTL1 &= ~UCSWRST;                     			// **Initialize USCI state machine**
 	
-	//A2D
-	P6SEL=BIT3;
-	P6REN|=BIT0|BIT1|BIT2;
+
  	
  	ADC12CTL0 = ADC12ON+SHT0_2+REFON+REF2_5V; // Turn on and set up ADC12  
  												//for more power turn off ref when not in use
@@ -117,7 +84,6 @@ void c_int00()	//system reset
 
 void main()
 {
-	c_int00();
 	_bis_SR_register(GIE);						//enable interrupts 
 	SVSCTL = 0xB0;                   		 // SVS  @ 3.2V
 	ADC12CTL0 |= ENC;                         // Enable conversions
@@ -134,7 +100,7 @@ void main()
     		ADC12CTL0 |= ADC12SC;                   // Start conversion
     		LPM0;
     		//TODO:Data Processing
-    		xmit(data);
+    		xmit((char)(data>>4));
     		sleep();
   		}
   	} 
@@ -156,7 +122,7 @@ __interrupt void ADC12_ISR (void)
 }
 
 
-void xmit(unsigned int toSend)			//Change to interrupt
+void xmit(unsigned char toSend)			
 {
 	while(P2IN&BIT0==1);		//Busy wait for clear to send
 	while(!(IFG2&UCA0TXIFG));	//Busy wait for buffer good
