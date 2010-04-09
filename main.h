@@ -4,5 +4,4 @@ void sleep();
 void main();
 char board;
 void antTest();
-void waitAck();
 #endif /*MAIN_H_*/

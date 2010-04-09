@@ -20,12 +20,6 @@
 volatile unsigned int data[100];
 volatile char head=0;
 volatile char tail=0;
-volatile unsigned int lastData;
-volatile int i=0;
-volatile int state=0;
-volatile int code=0;
-volatile int id;
-
 void c_int00()	//system reset
 {
 	//int i;
@@ -92,10 +86,6 @@ void c_int00()	//system reset
 	
 	for ( i=0; i<0x3600; i++);                // Delay for reference start-up
 	*/
-	lastData=0;
-	for(i=0;i<20;i++)
-		data[i]=0;
-	i=0;
 }
 
 
@@ -107,25 +97,14 @@ void main()
 	//ADC12CTL0 |= ENC;                         // Enable conversions
 	
 	reset();
-	//for ( x=0; x<7000; x++);                // Delay for  start-up
-	waitAck();
-	//cwInit();
-	//unAssign();
-	//	for ( x=0; x<2000; x++);                // Delay for  start-up
-	//cwTest();
-
 	assign();
-	//for ( x=0; x<2000; x++);                // Delay for  start-up
-	waitAck();
 	setChannelId();
-	waitAck();
-	
 	open();
-	waitAck();
+	out('H','e','l','l','o','!','!','!');
+	
   	while(1)
   	{
-  			out();
-  			waitAck();
+  		out('S','t','o','p',0,0,0,0);	
  	 	//SVSCTL&=~SVSFG;						//Reset svs flag
   		/*if((SVSCTL&SVSFG))				//power bad
   		{
@@ -143,32 +122,6 @@ void main()
   		//}
   	} 
 }
-void waitAck()
-{
-	char ack=0;
-	int  total=0;
-	while(!ack)
-	{
-		if(head!=tail)
-		{
-			total+=data[head];
-			head++;	
-		}
-		if (total==0x21E)
-		{
-			ack=1;
-			total=0;
-		}
-		else if(total==0x1CE||total==0x1EE||total==0x1DE||total==0x1D0)
-		{
-			ack=1;
-			total=0;
-		}
-		if(head==100)
-			head=0;
-	}	
-}
-
 #pragma vector=WDT_VECTOR
 __interrupt void watchdog_timer (void)
 {
