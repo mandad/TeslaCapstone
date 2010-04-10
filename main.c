@@ -18,11 +18,13 @@
  * 
  * **************************/
 volatile unsigned int data[100];
+volatile unsigned int analog=0;
 volatile char head=0;
 volatile char tail=0;
+//#pragma vector=RESET_VECTOR
 void c_int00()	//system reset
 {
-	//int i;
+	int i;
 	WDTCTL=WDTPW|WDTHOLD;								//stop the watchdog
 	
 	if (CALBC1_1MHZ ==0xFF || CALDCO_1MHZ == 0xFF)      //set to 1MHZ                         
@@ -36,6 +38,8 @@ void c_int00()	//system reset
 	BCSCTL3 |= LFXT1S_2;								//Set ACLK to VLO
 	IE1 |= WDTIE;                             			// Enable WDT interrupt
 	
+	for(i=0;i<100;i++)
+		data[i]=0;
 	//Config unused ports like P1
 	P1SEL=0;											//set to I/O
 	P1DIR=BIT0|BIT1|BIT2;								// set input cept baud output
@@ -58,17 +62,17 @@ void c_int00()	//system reset
 	P4OUT=BIT5;
 	
 	P5SEL=0;
-	P5DIR=0;
+	P5DIR=BIT4;
 	P5REN=0xFF;
 	
-	/*P6SEL=BIT3;
+	P6SEL=BIT3;
 	P6DIR=0;
 	P6REN=~BIT3;
-    */
-    P6SEL=0;
+    
+    /*P6SEL=0;
 	P6DIR=0;
 	P6REN=0xFF;
-	
+	*/
     //UART brs1 brf0
 	UCA0CTL1 |= UCSSEL_2;                    			// SMCLK
     UCA0BR0 = 6;                            			// 1MHz 9600
@@ -77,43 +81,68 @@ void c_int00()	//system reset
     UCA0CTL1 &= ~UCSWRST;                     			// **Initialize USCI state machine**
 	IE2 |= UCA0RXIE;                          
 
- 	
- 	/*ADC12CTL0 = ADC12ON+SHT0_2+REFON+REF2_5V; // Turn on and set up ADC12  
+	
+ 	ADC12CTL0 = ADC12ON+SHT0_2+REFON+REF2_5V; // Turn on and set up ADC12  
  												//for more power turn off ref when not in use
 	ADC12CTL1 = SHP;                          // Use sampling timer
 	ADC12MCTL0 = SREF_1;                      // Vr+=Vref+
 	ADC12IE = 0x01;                           // Enable interrupt
 	
 	for ( i=0; i<0x3600; i++);                // Delay for reference start-up
-	*/
+	
 }
 
 
 void main()
 {
+//	char tog=0;
 	c_int00();
 	_bis_SR_register(GIE);						//enable interrupts 
-	//SVSCTL = 0xB0;                   		 // SVS  @ 3.2V
-	//ADC12CTL0 |= ENC;                         // Enable conversions
+	SVSCTL = 0xB0;                   		 // SVS  @ 3.2V
+	ADC12CTL0 |= ENC;                         // Enable conversions
 	
 	reset();
 	assign();
 	setChannelId();
 	open();
-	out('H','e','l','l','o','!','!','!');
 	
+	out('H','e','l','l','o','!','!','!');
+	out('H','e','l','l','o','!','!','!');
+	out('H','e','l','l','o','!','!','!');
+	out('H','e','l','l','o','!','!','!');
+	out('H','e','l','l','o','!','!','!');
+	out('H','e','l','l','o','!','!','!');
+	//sleepMode();
+  	//P2OUT|=BIT7;
+  //	P4OUT=0;
   	while(1)
   	{
-  		out('S','t','o','p',0,0,0,0);	
- 	 	//SVSCTL&=~SVSFG;						//Reset svs flag
-  		/*if((SVSCTL&SVSFG))				//power bad
+  		
+  		sleep();
+  		//out('S','t','o','p',0,0,0,0);	
+ 	 	/*SVSCTL&=~SVSFG;						//Reset svs flag
+  		if((SVSCTL&SVSFG))				//power bad
   		{
-  			sleep();	
+  			tog=1;	
+  			P4OUT&=~BIT5;			
   		}
   		else
-  		{*/
-    		//ADC12CTL0 |= ADC12SC;                   // Start conversion
-    		//LPM0;
+  		{
+  			if(tog)
+  			{
+  				P4OUT|=BIT5;
+  				P2OUT&=~BIT7;
+  				tog=0;
+  				reset();
+				assign();
+				setChannelId();
+				open();
+				out('S','t','o','p',0,0,0,0);	
+  			}
+  		}
+  		*/
+    		ADC12CTL0 |= ADC12SC;                   // Start conversion
+    		LPM0;
     		//TODO:Data Processing
     		
     		//status();
@@ -122,6 +151,7 @@ void main()
   		//}
   	} 
 }
+
 #pragma vector=WDT_VECTOR
 __interrupt void watchdog_timer (void)
 {
@@ -130,12 +160,18 @@ __interrupt void watchdog_timer (void)
 }
 
 
-/*#pragma vector=ADC12_VECTOR
+#pragma vector=ADC12_VECTOR
 __interrupt void ADC12_ISR (void)
 {
+	char a2=0xff;
+	char a3=0xff;
 	LPM0_EXIT;
-    data=ADC12MEM0;
-}*/
+    analog=ADC12MEM0;
+    //analog =0xABCD;
+    a2=analog>>8;
+    a3=(char)analog;
+    out('T','M','P',a2,a3,'0','0','0');
+}
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void)
 {

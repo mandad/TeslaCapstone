@@ -1,11 +1,15 @@
 #include "ant.h"
 #include <msp430f2616.h>
+char state=0;
 
 void reset()
 {
 	char ack=0;
-	int total=0;
+	char ack1=0;
+	int length=0;
+	char thisOne=0;
 	char checksum=0xA4;
+	state=0;
 	//sync
 	xmit(checksum);
 	//msg length
@@ -19,18 +23,45 @@ void reset()
 	checksum^=0;
 	//checksum
 	xmit(checksum);
+	head=0;
+	tail=0;
 	while(!ack)
 	{
 		if(head!=tail)
 		{
-			total+=data[head];
+			switch(state)
+			{
+				case 0:
+					if(data[head]==0xA4)
+						state=1;
+				break;
+				case 1:
+					length=data[head];
+					state=2;
+				break;
+				case 2:
+					if(data[head]==0x6F)
+					{
+						thisOne=1;
+					}
+					state=3;
+				break;
+				case 3:
+					if(thisOne)
+						if(data[head]==0x20)
+							ack1=1;
+					if(length!=0)
+						length--;
+					else
+					{
+						state=0;
+						ack=ack1;
+					}
+				break;
+			}
 			head++;	
 			if(head==100)
 				head=0;
-		}
-		else if (total==0x21E)
-		{
-			ack=1;
 		}
 	}
 }
@@ -38,7 +69,9 @@ void reset()
 void assign()
 {
 	char ack=0;
-	int total=0;
+	char ack1=0;
+	int length=0;
+	char thisOne=0;
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -64,21 +97,50 @@ void assign()
 	{
 		if(head!=tail)
 		{
-			total+=data[head];
+			switch(state)
+			{
+				case 0:
+					if(data[head]==0xA4)
+						state=1;
+				break;
+				case 1:
+					length=data[head];
+					state=2;
+				break;
+				case 2:
+					state=3;
+				break;
+				case 3:
+					if(length==2)
+					{
+						if(data[head]==0x42)
+							thisOne=1;
+					}
+					else if(length==1)
+							if(thisOne)
+								if(data[head]==0x00)
+									ack1=1;
+					if(length!=0)
+						length--;
+					else
+					{
+						state=0;
+						ack=ack1;
+					}
+				break;
+			}
 			head++;	
 			if(head==100)
 				head=0;
-		}
-		else if (total==0x1CE)
-		{
-			ack=1;
 		}
 	}
 }
 void setChannelId()
 {
 	char ack=0;
-	int total=0;
+	char ack1=0;
+	int length=0;
+	char thisOne=0;
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -109,14 +171,41 @@ void setChannelId()
 	{
 		if(head!=tail)
 		{
-			total+=data[head];
+			switch(state)
+			{
+				case 0:
+					if(data[head]==0xA4)
+						state=1;
+				break;
+				case 1:
+					length=data[head];
+					state=2;
+				break;
+				case 2:
+					state=3;
+				break;
+				case 3:
+					if(length==2)
+					{
+						if(data[head]==0x51)
+							thisOne=1;
+					}
+					else if(length==1)
+							if(thisOne)
+								if(data[head]==0x00)
+									ack1=1;
+					if(length!=0)
+						length--;
+					else
+					{
+						state=0;
+						ack=ack1;
+					}
+				break;
+			}
 			head++;	
 			if(head==100)
 				head=0;
-		}
-		else if (total==0x1EE)
-		{
-			ack=1;
 		}
 	}
 }
@@ -124,7 +213,9 @@ void setChannelId()
 void out(char data1,char data2,char data3,char data4,char data5,char data6,char data7,char data8)
 {
 	char ack=0;
-	int total=0;
+	char ack1=0;
+	int length=0;
+	char thisOne=0;
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -160,14 +251,41 @@ void out(char data1,char data2,char data3,char data4,char data5,char data6,char 
 	{
 		if(head!=tail)
 		{
-			total+=data[head];
+			switch(state)
+			{
+				case 0:
+					if(data[head]==0xA4)
+						state=1;
+				break;
+				case 1:
+					length=data[head];
+					state=2;
+				break;
+				case 2:
+					state=3;
+				break;
+				case 3:
+					if(length==2)
+					{
+						if(data[head]==0x01)
+							thisOne=1;
+					}
+					else if(length==1)
+							if(thisOne)
+								if(data[head]==0x03)
+									ack1=1;
+					if(length!=0)
+						length--;
+					else
+					{
+						state=0;
+						ack=ack1;
+					}
+				break;
+			}
 			head++;	
 			if(head==100)
 				head=0;
-		}
-		else if (total==0x1D0)
-		{
-			ack=1;
 		}
 	}
 }
@@ -214,7 +332,9 @@ void cwTest()
 void open()
 {
 	char ack=0;
-	int total=0;
+	char ack1=0;
+	int length=0;
+	char thisOne=0;
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -224,6 +344,68 @@ void open()
 	//Open
 	xmit(0x4B);
 	checksum^=0x4B;
+	//channel id
+	xmit(0);
+	checksum^=0;
+	//checksum
+	xmit(checksum);
+	while(!ack)
+	{
+		if(head!=tail)
+		{
+			switch(state)
+			{
+				case 0:
+					if(data[head]==0xA4)
+						state=1;
+				break;
+				case 1:
+					length=data[head];
+					state=2;
+				break;
+				case 2:
+					state=3;
+				break;
+				case 3:
+					if(length==2)
+					{
+						if(data[head]==0x4B)
+							thisOne=1;
+					}
+					else if(length==1)
+							if(thisOne)
+								if(data[head]==0x00)
+									ack1=1;
+					if(length!=0)
+						length--;
+					else
+					{
+						state=0;
+						ack=ack1;
+					}
+				break;
+			}
+			head++;	
+			if(head==100)
+				head=0;
+		}
+	}
+
+}
+/*
+void close()
+{
+	char ack=0;
+	int total=0;
+	char checksum=0xA4;
+	//sync
+	xmit(checksum);
+	//msg length
+	xmit(1);
+	checksum^=1;
+	//Open
+	xmit(0x4C);
+	checksum^=0x4C;
 	//channel id
 	xmit(0);
 	checksum^=0;
@@ -244,6 +426,23 @@ void open()
 		}
 	}
 
+}
+*/
+void sleepMode()
+{
+	char checksum=0xA4;
+	//sync
+	xmit(checksum);
+	//msg length
+	xmit(1);
+	checksum^=1;
+	//Sleep
+	xmit(0xC5);
+	checksum^=0xC5;
+	xmit(0);
+	checksum^=0;
+	//checksum
+	xmit(checksum);
 }
 
 void xmit(unsigned char toSend)			
