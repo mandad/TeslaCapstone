@@ -21,7 +21,6 @@ volatile unsigned int data[100];
 volatile unsigned int analog=0;
 volatile char head=0;
 volatile char tail=0;
-//#pragma vector=RESET_VECTOR
 void c_int00()	//system reset
 {
 	int i;
@@ -68,11 +67,7 @@ void c_int00()	//system reset
 	P6SEL=BIT3;
 	P6DIR=0;
 	P6REN=~BIT3;
-    
-    /*P6SEL=0;
-	P6DIR=0;
-	P6REN=0xFF;
-	*/
+
     //UART brs1 brf0
 	UCA0CTL1 |= UCSSEL_2;                    			// SMCLK
     UCA0BR0 = 6;                            			// 1MHz 9600
@@ -85,7 +80,7 @@ void c_int00()	//system reset
  	ADC12CTL0 = ADC12ON+SHT0_2+REFON+REF2_5V; // Turn on and set up ADC12  
  												//for more power turn off ref when not in use
 	ADC12CTL1 = SHP;                          // Use sampling timer
-	ADC12MCTL0 = SREF_1;                      // Vr+=Vref+
+	 ADC12MCTL0 = SREF_1+INCH_3;              // Vr+=Vref+
 	ADC12IE = 0x01;                           // Enable interrupt
 	
 	for ( i=0; i<0x3600; i++);                // Delay for reference start-up
@@ -95,7 +90,6 @@ void c_int00()	//system reset
 
 void main()
 {
-//	char tog=0;
 	c_int00();
 	_bis_SR_register(GIE);						//enable interrupts 
 	SVSCTL = 0xB0;                   		 // SVS  @ 3.2V
@@ -115,40 +109,16 @@ void main()
 	//sleepMode();
   	//P2OUT|=BIT7;
   //	P4OUT=0;
+   
   	while(1)
   	{
   		
   		sleep();
-  		//out('S','t','o','p',0,0,0,0);	
  	 	/*SVSCTL&=~SVSFG;						//Reset svs flag
   		if((SVSCTL&SVSFG))				//power bad
-  		{
-  			tog=1;	
-  			P4OUT&=~BIT5;			
-  		}
-  		else
-  		{
-  			if(tog)
-  			{
-  				P4OUT|=BIT5;
-  				P2OUT&=~BIT7;
-  				tog=0;
-  				reset();
-				assign();
-				setChannelId();
-				open();
-				out('S','t','o','p',0,0,0,0);	
-  			}
-  		}
-  		*/
+*/
     		ADC12CTL0 |= ADC12SC;                   // Start conversion
     		LPM0;
-    		//TODO:Data Processing
-    		
-    		//status();
-    		//xmit((char)(data>>4));
-    		
-  		//}
   	} 
 }
 
@@ -167,7 +137,6 @@ __interrupt void ADC12_ISR (void)
 	char a3=0xff;
 	LPM0_EXIT;
     analog=ADC12MEM0;
-    //analog =0xABCD;
     a2=analog>>8;
     a3=(char)analog;
     out('T','M','P',a2,a3,'0','0','0');
