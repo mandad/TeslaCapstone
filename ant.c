@@ -63,6 +63,7 @@ void reset()
 				head=0;
 		}
 	}
+	enableCry();
 }
 
 void assign()
@@ -135,12 +136,14 @@ void assign()
 	}
 }
 void enableCry()
-{
+{/*
 	char ack=0;
 	char ack1=0;
 	int length=0;
 	char thisOne=0;
+	*/
 	char checksum=0xA4;
+	
 	//sync
 	xmit(checksum);
 	//msg length
@@ -390,7 +393,7 @@ void cwTest()
 	xmit(checksum);
 
 }
-void open()
+void openChannel()
 {
 	char ack=0;
 	char ack1=0;
@@ -453,11 +456,13 @@ void open()
 	}
 
 }
-/*
-void close()
+
+void closeChannel()
 {
 	char ack=0;
-	int total=0;
+	char ack1=0;
+	int length=0;
+	char thisOne=0;
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -476,19 +481,46 @@ void close()
 	{
 		if(head!=tail)
 		{
-			total+=data[head];
+			switch(state)
+			{
+				case 0:
+					if(data[head]==0xA4)
+						state=1;
+				break;
+				case 1:
+					length=data[head];
+					state=2;
+				break;
+				case 2:
+					state=3;
+				break;
+				case 3:
+					if(length==2)
+					{
+						if(data[head]==0x4C)
+							thisOne=1;
+					}
+					else if(length==1)
+							if(thisOne)
+								if(data[head]==0x00)
+									ack1=1;
+					if(length!=0)
+						length--;
+					else
+					{
+						state=0;
+						ack=ack1;
+					}
+				break;
+			}
 			head++;	
 			if(head==100)
 				head=0;
 		}
-		else if (total==0x1DE)
-		{
-			ack=1;
-		}
 	}
 
 }
-*/
+
 void sleepMode()
 {
 	char checksum=0xA4;
