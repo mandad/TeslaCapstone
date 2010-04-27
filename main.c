@@ -21,7 +21,10 @@ volatile unsigned int data[100];
 volatile unsigned int analog=0;
 volatile char head=0;
 volatile char tail=0;
-void c_int00()	//system reset
+int sleepCounter=0;
+char temp=0;
+char button=0;
+void c_int00()
 {
 	WDTCTL=WDTPW|WDTHOLD;								//stop the watchdog	
 	if (CALBC1_1MHZ ==0xFF || CALDCO_1MHZ == 0xFF)      //set to 1MHZ                         
@@ -47,7 +50,7 @@ void c_int00()	//system reset
 	P1SEL=0;											
 	P1DIR=BIT0|BIT1|BIT2;								// set input cept baud output
 	P1REN=~(BIT0|BIT1|BIT2);							//Activate pull resistors
-	P1OUT=BIT0|BIT1|BIT2;									//9600 baud
+	P1OUT=BIT1|BIT2;									//50k baud
 	
 	P3SEL=BIT4|BIT5;									//UART A0
 	P3DIR=0;								
@@ -60,93 +63,120 @@ void c_int00()	//system reset
 	P6SEL=0;
 	P6DIR=0;
 	P6REN=BIT6|BIT7;
-	/*
-	//TMP Detect
+	
+	//TMP Detect SB2
 	if((P3IN&BIT0)==BIT0)
 	{
-		board+=2;
+		temp=1;
 		P6SEL=BIT3;
 		P6REN|=BIT4|BIT5;
 		P3REN|=BIT3;
 	}
-	//Button Detect
+	//Button Detect SB1
 	if((P2IN&BIT2)==BIT2)
 	{
-		board+=1;
+		button=1;
 		P6REN|=BIT0|BIT1|BIT2;
 	}
-	*/
-		P6SEL=BIT3;
-		P6REN|=BIT4|BIT5;
-		P3REN|=BIT3;
-	
+
 	//UART
-	UCA0CTL1 |= UCSSEL_2;                    			// SMCLK
-    UCA0BR0 = 1;                            			// 1MHz 57600
-    UCA0BR1 = 0;                              			// 1MHz 57600
-    UCA0MCTL = UCBRF2+UCBRF1+UCBRF0+UCOS16; 			// Modulation UCBRSx = 1
+	
+	UCA0CTL1 |= UCSSEL_2; // SMCLK
+    UCA0BR0 = 0x14; // 1MHz 50k
+    UCA0BR1 = 0; // 1MHz 50k
     UCA0CTL1 &= ~UCSWRST; 								// **Initialize USCI state machine**
 	
 	IE2 |= UCA0RXIE;             
-    
     IE1 |= WDTIE;                             			// Enable WDT interrupt
 
-
-	//if((board-1)!=0)
-	//{
- 		ADC12CTL0 = ADC12ON+SHT0_2+REFON+REF2_5V; // Turn on and set up ADC12  
-												//for more power turn off ref when not in use
-		ADC12CTL1 = SHP;                          // Use sampling timer
-		ADC12MCTL0 = SREF_1+INCH_3;              // Vr+=Vref+
-		ADC12CTL0 |= ENC;                         // Enable conversions
-		ADC12IE = 0x01;                           // Enable interrupt
-	//}
-	//for ( i=0; i<0x3600; i++);                // Delay for reference start-up
-	
 	_bis_SR_register(GIE);						//enable interrupts 
 }
 
-
 void main()
 {
+	int i=0;
 	c_int00();
-	sleep();								//delay for reference
-	SVSCTL = 0xB0;                   		 // SVS  @ 3.2V
-	P2OUT&=~BIT7;
-	reset();
-	assign();
-	setChannelId();
-	P2OUT|=BIT7;
-	while(1)
+	
+	SVSCTL = 0x80;                   		 // SVS  @ 2.8V
+	while(i==0)
 	{
-		SVSCTL&=~SVSFG;						//Reset svs flag
-  		if((SVSCTL&SVSFG))				//power bad
+		SVSCTL&=~SVSFG;
+		if((SVSCTL&SVSFG)==0)				//power good
   		{
-  			if(sleepCounter==0)
-  			{
-				SVSCTL = 0xB0;                   		 // SVS  @ 3.2V
-  				ADC12CTL0&= ~(ADC12ON+REFON);
-  				sleepCounter=1;
-  			}
-  			//Possible DeepSleep on Xmiter
-  		}
-  		else
-  		{
-  			if(sleepCounter>0)
-  			{
-  				SVSCTL=0x30;							//SVS@ 2.2V
-  				sleepCounter=0;
-  				ADC12CTL0|= (ADC12ON+REFON);
-  				sleep();
-  			}
-  			ADC12CTL0 |= ADC12SC;                   // Start conversion
-    		LPM0;
-    		P2OUT&=~BIT7;
+  			if(temp==1)
+			{
+ 			//	ADC12CTL0 = ADC12ON+SHT0_6+REFON+REF2_5V; // Turn on and set up ADC12  105 cycles needed
+				ADC12CTL0 = ADC12ON+SHT0_6; // Turn on and set up ADC12  105 cycles needed
+				ADC12CTL1 = SHP;                          // Use sampling timer
+				ADC12MCTL0 = SREF_1+INCH_3;              // Vr+=Vref+ A3
+				ADC12IE = 0x01;                           // Enable interrupt
+			}	
+			P2OUT&=~BIT7;
+			enableCry();
+			reset();
+			assign();
+			setChannelId();
+			setPeriod();
+			setPower();
 			openChannel();
-    		out('1','1','1',analog>>8,(char)analog,'0','0','0');
-    		closeChannel();
-    		P2OUT|=BIT7;
+			out('1','1','1','1','1','1','1','1');	//xmit
+			P2OUT|=BIT7;
+			i++;
   		}
+	}
+  	SVSCTL = 0x30;                   		 // SVS  @ 2.2V		
+	while(1)
+	{ 
+		SVSCTL&=~SVSFG;						//Reset svs flag
+		if((SVSCTL&SVSFG)==0)				//power good
+		{
+			
+			if(sleepCounter>=5)
+			{
+				ADC12CTL0 = ADC12ON+SHT0_6; // Turn on and set up ADC12  105 cycles needed
+				if(sleepCounter>=10)
+				{
+					P2OUT&=~BIT7;
+					//reset();									//Force ANT in good state
+					enableCry();
+					assign();
+					setChannelId();
+					setPeriod();
+					setPower();
+					openChannel();
+					P2OUT|=BIT7;
+				}
+				sleepCounter=0;
+				SVSCTL = 0x30;
+			}
+				
+			ADC12CTL0 |= ENC;                         // Enable conversions
+  			ADC12CTL0 |= ADC12SC;                   // Start conversion
+    		LPM3;
+    		ADC12CTL0 &= ~ENC;						//Turn off ADC12 
+    		
+    		i++;
+    		P2OUT&=~BIT7;
+    		//out((analog>>8)+0x10,(char)analog,'0','0','0','0','0','0');	//proper format
+    		out(i,'1','0','0','0','0',(analog>>8),(char)analog);	//debug
+    		P2OUT|=BIT7;
+		}
+		else
+		{
+			if(sleepCounter==5)		//no power
+			{
+				ADC12CTL0=0;		//A2D off
+				SVSCTL = 0x80;                   		 // SVS  @ 2.8V
+  				ADC12CTL0=0;
+			}
+			else if(sleepCounter==10) //still no power
+			{
+				P2OUT&=~BIT7;
+				sleepMode();		//Deep Sleep
+				P2OUT|=BIT7;	
+			}
+			sleepCounter++;
+		}
   		sleep();
 	}
 }
@@ -162,7 +192,7 @@ __interrupt void watchdog_timer (void)
 #pragma vector=ADC12_VECTOR
 __interrupt void ADC12_ISR (void)
 {
-	LPM0_EXIT;
+	LPM3_EXIT;
     analog=ADC12MEM0;
 }
 

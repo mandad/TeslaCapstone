@@ -1,6 +1,5 @@
 #include "ant.h"
 #include <msp430f2616.h>
-char state=0;
 
 void reset()
 {
@@ -8,6 +7,7 @@ void reset()
 	char ack1=0;
 	int length=0;
 	char thisOne=0;
+	char state=0;
 	char checksum=0xA4;
 	state=0;
 	//sync
@@ -72,6 +72,7 @@ void assign()
 	char ack1=0;
 	int length=0;
 	char thisOne=0;
+	char state=0;
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -136,14 +137,8 @@ void assign()
 	}
 }
 void enableCry()
-{/*
-	char ack=0;
-	char ack1=0;
-	int length=0;
-	char thisOne=0;
-	*/
+{
 	char checksum=0xA4;
-	
 	//sync
 	xmit(checksum);
 	//msg length
@@ -157,54 +152,17 @@ void enableCry()
 	xmit(0);
 	checksum^=0;
 	xmit(checksum);
-	/*while(!ack)
-	{
-		if(head!=tail)
-		{
-			switch(state)
-			{
-				case 0:
-					if(data[head]==0xA4)
-						state=1;
-				break;
-				case 1:
-					length=data[head];
-					state=2;
-				break;
-				case 2:
-					state=3;
-				break;
-				case 3:
-					if(length==2)
-					{
-						if(data[head]==0x6D)
-							thisOne=1;
-					}
-					else if(length==1)
-							if(thisOne)
-								if(data[head]==0x00)
-									ack1=1;
-					if(length!=0)
-						length--;
-					else
-					{
-						state=0;
-						ack=ack1;
-					}
-				break;
-			}
-			head++;	
-			if(head==100)
-				head=0;
-		}
-	}*/
+	xmit(0);
+	xmit(0);
 }
+
 void setChannelId()
 {
 	char ack=0;
 	char ack1=0;
 	int length=0;
 	char thisOne=0;
+	char state=0;
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -273,13 +231,78 @@ void setChannelId()
 		}
 	}
 }
-
-void out(char data1,char data2,char data3,char data4,char data5,char data6,char data7,char data8)
+void setPeriod()
 {
 	char ack=0;
 	char ack1=0;
 	int length=0;
 	char thisOne=0;
+	char state=0;
+	char checksum=0xA4;
+	//sync
+	xmit(checksum);
+	//msg length
+	xmit(3);
+	checksum^=3;
+	//Msg ID
+	xmit(0x43);
+	checksum^=0x43;
+	//DATA
+	//channel id
+	xmit(0);
+	checksum^=0;
+	//channel Type
+	xmit(0xFF);
+	checksum^=0xFF;
+	//Network #
+	xmit(0xFF);
+	checksum^=0xFF;
+	//checksum
+	xmit(checksum);
+	while(!ack)
+	{
+		if(head!=tail)
+		{
+			switch(state)
+			{
+				case 0:
+					if(data[head]==0xA4)
+						state=1;
+				break;
+				case 1:
+					length=data[head];
+					state=2;
+				break;
+				case 2:
+					state=3;
+				break;
+				case 3:
+					if(length==2)
+					{
+						if(data[head]==0x43)
+							thisOne=1;
+					}
+					else if(length==1)
+							if(thisOne)
+								if(data[head]==0x00)
+									ack1=1;
+					if(length!=0)
+						length--;
+					else
+					{
+						state=0;
+						ack=ack1;
+					}
+				break;
+			}
+			head++;	
+			if(head==100)
+				head=0;
+		}
+	}
+}
+void out(char data1,char data2,char data3,char data4,char data5,char data6,char data7,char data8)
+{
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -311,94 +334,17 @@ void out(char data1,char data2,char data3,char data4,char data5,char data6,char 
 	checksum^=data8;
 	//checksum
 	xmit(checksum);
-	while(!ack)
-	{
-		if(head!=tail)
-		{
-			switch(state)
-			{
-				case 0:
-					if(data[head]==0xA4)
-						state=1;
-				break;
-				case 1:
-					length=data[head];
-					state=2;
-				break;
-				case 2:
-					state=3;
-				break;
-				case 3:
-					if(length==2)
-					{
-						if(data[head]==0x01)
-							thisOne=1;
-					}
-					else if(length==1)
-							if(thisOne)
-								if(data[head]==0x03)
-									ack1=1;
-					if(length!=0)
-						length--;
-					else
-					{
-						state=0;
-						ack=ack1;
-					}
-				break;
-			}
-			head++;	
-			if(head==100)
-				head=0;
-		}
-	}
-}
-void cwInit()
-{
-	char checksum=0xA4;
-	//sync
-	xmit(checksum);
-	//msg length
-	xmit(1);
-	checksum^=1;
-	//init
-	xmit(0x53);
-	checksum^=0x53;
-	//channel id
 	xmit(0);
-	checksum^=0;
-	//checksum
-	xmit(checksum);
-	
-}
-void cwTest()
-{
-	char checksum=0xA4;
-	//sync
-	xmit(checksum);
-	//msg length
-	xmit(3);
-	checksum^=3;
-	//init
-	xmit(0x48);
-	checksum^=0x48;
-	//channel id
 	xmit(0);
-	checksum^=0;
-	xmit(3);
-	checksum^=3;
-	xmit(66);
-	checksum^=66;
-	//checksum
-	xmit(checksum);
+}
 
-}
 void openChannel()
 {
 	char ack=0;
 	char ack1=0;
 	int length=0;
 	char thisOne=0;
+	char state=0;
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -463,6 +409,7 @@ void closeChannel()
 	char ack1=0;
 	int length=0;
 	char thisOne=0;
+	char state=0;
 	char checksum=0xA4;
 	//sync
 	xmit(checksum);
@@ -537,6 +484,26 @@ void sleepMode()
 	//checksum
 	xmit(checksum);
 }
+void setPower()
+{
+	char checksum=0xA4;
+	//sync
+	xmit(checksum);
+	//msg length
+	xmit(2);
+	checksum^=2;
+	//Power
+	xmit(0x60);
+	checksum^=0x60;
+	xmit(0);
+	checksum^=0;
+	xmit(0);
+	checksum^=0;
+	//checksum
+	xmit(checksum);
+	xmit(0);
+	xmit(0);
+}
 
 void xmit(unsigned char toSend)			
 {
@@ -547,6 +514,46 @@ void xmit(unsigned char toSend)
 }
 
 /*
+ * void cwInit()
+{
+	char checksum=0xA4;
+	//sync
+	xmit(checksum);
+	//msg length
+	xmit(1);
+	checksum^=1;
+	//init
+	xmit(0x53);
+	checksum^=0x53;
+	//channel id
+	xmit(0);
+	checksum^=0;
+	//checksum
+	xmit(checksum);
+}
+void cwTest()
+{
+	char checksum=0xA4;
+	//sync
+	xmit(checksum);
+	//msg length
+	xmit(3);
+	checksum^=3;
+	//init
+	xmit(0x48);
+	checksum^=0x48;
+	//channel id
+	xmit(0);
+	checksum^=0;
+	xmit(3);
+	checksum^=3;
+	xmit(66);
+	checksum^=66;
+	//checksum
+	xmit(checksum);
+
+}
+
 void status()
 {
 	char checksum=0xA4;
@@ -568,8 +575,7 @@ void status()
 	xmit(checksum);
 	//LPM3;
 }
-*/
-/*
+
 void unAssign()
 {
 	char checksum=0xA4;

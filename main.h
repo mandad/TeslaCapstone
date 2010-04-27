@@ -2,6 +2,5 @@
 #define MAIN_H_
 void sleep();
 void main();
-char board=0;
-int sleepCounter=0;
+void c_int00();
 #endif /*MAIN_H_*/
